@@ -24,7 +24,53 @@ class App extends Component {
       players: [],
       terrain: ''
     }
+    this.graph = {
+      0: [{x: 'x', y: 'y'}, {"n": "?", "e": "?", "s": "?", "w": "?"}]
+    }
+    this.traversalPath = []
   }
+  
+
+  // creates exit obj
+  createExitObj() {
+    const coordinatesObj = {
+      x: this.state.coordinates.replace(/["()]/gi, '').split(",")[0],
+      y: this.state.coordinates.replace(/["()]/gi, '').split(",")[1]
+    }
+    const exitObj = {}
+    if (!this.graph[`Room ${this.state.room_id}`]) {
+      for (let exit of this.state.exits) {
+        exitObj[exit] = '?'
+      }
+      this.graph[`Room ${this.state.room_id}`] = [coordinatesObj, exitObj]
+    }
+    //value of graph at room id gives you (coordinates, exitObj)
+    return this.graph[`Room ${this.state.room_id}`]
+  }
+
+  startTraversal() {
+    console.log("in here")
+    const inverse_directions = {'n': 's', 's': 'n', 'e': 'w', 'w': 'e'}
+    const currentRoomExits = this.state.exits
+    console.log(currentRoomExits)
+
+
+    const unexploredExits = []
+    // look for ?s to append to unexplored 
+    for (let direction of currentRoomExits) {
+      if (direction === '?' ){
+          unexploredExits.push(direction)
+      }
+      if (unexploredExits.length > 0) {
+        const firstExit =  unexploredExits[0]
+        this.traversalPath.push(firstExit)
+        const prev_room_id = this.state.room_id
+        this.handleMovement(direction)
+
+      }
+    }
+  }
+
   
   componentDidMount() {
     const headers = {headers : {Authorization: config['token']}}
@@ -41,11 +87,17 @@ class App extends Component {
         coordinates: response.data.coordinates,
         exits: response.data.exits
       }})
+
     })
     .catch(error => {
       console.log(error.response.data)
     })
-    this.handleMovement()
+    setTimeout(() => {
+      this.handleMovement()
+      this.startTraversal()
+      this.createExitObj()
+      console.log(this.state.exits)
+    }, 500)
   }
 
   handleMovement(direction) {
