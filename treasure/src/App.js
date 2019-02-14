@@ -4,8 +4,8 @@ import './App.css';
 import axios from 'axios';
 import config from './secret';
 
-// axios.defaults.headers.common['Authorization'] = config.token
-// axios.defaults.headers.post['Content-Type'] = 'application/json'
+axios.defaults.headers.common['Authorization'] = config.token;
+axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 class App extends Component {
   constructor(props) {
@@ -22,23 +22,9 @@ class App extends Component {
       items: [],
       messages: [],
       players: [],
-      terrain: ''
+      terrain: '',
+      graph: {}
     };
-    this.graph = {
-      0: [
-        {
-          x: 'x',
-          y: 'y'
-        },
-        {
-          n: '?',
-          e: '?',
-          s: '?',
-          w: '?'
-        }
-      ]
-    };
-    this.traversalPath = [];
   }
 
   // creates exit obj
@@ -57,6 +43,35 @@ class App extends Component {
     //value of graph at room id gives you (coordinates, exitObj)
     return this.graph[`Room ${this.state.room_id}`];
   }
+
+  inverseDirection = (direction) => {
+    const inverseDir = { n: 's', s: 'n', w: 'e', e: 'w' };
+    return inverseDir[direction];
+  };
+
+  updateGraph = (id, coordinates, exits, prevRoomId = null, direction = null) => {
+    let graph = Object.assign({}, this.state.graph);
+    if (!this.state.graph[this.state.room_id]) {
+      const newGraph = {};
+      newGraph['cords'] = coordinates;
+
+      const directions = {};
+      for (let exit of this.state.exits) {
+        console.log(exit);
+        directions[exit] = '?';
+      }
+      newGraph['exits'] = directions;
+      graph = { ...graph, [this.state.room_id]: newGraph };
+    }
+    if (prevRoomId && direction) {
+      console.log(graph[prevRoomId]['exits'][direction]);
+      const inverse = this.inverseDirection(direction);
+      graph[prevRoomId]['exits'][direction] = this.state.room_id;
+      graph[this.state.room_id]['exits'][inverse] = prevRoomId;
+    }
+    localStorage.setItem('graph', JSON.stringify(graph));
+    return graph;
+  };
 
   backtrack_to_unexplored(starting_vertex_id = this.state.room_id, target = '?') {
     const queue = [];
@@ -131,24 +146,24 @@ class App extends Component {
         Authorization: config['token']
       }
     };
-    // if (localStorage.hasOwnProperty('graph')) {
-    //   const graph = JSON.parse(localStorage.getItem('graph'))
-    //   this.graph = graph
-    // }
-    this.graph = {
-      10: [
-        {
-          x: 'x',
-          y: 'y'
-        },
-        {
-          n: '?',
-          e: '?',
-          s: '?',
-          w: '?'
-        }
-      ]
-    };
+    if (localStorage.hasOwnProperty('graph')) {
+      const graph = JSON.parse(localStorage.getItem('graph'));
+      this.graph = graph;
+    }
+    // this.graph = {
+    //   10: [
+    //     {
+    //       x: 'x',
+    //       y: 'y'
+    //     },
+    //     {
+    //       n: '?',
+    //       e: '?',
+    //       s: '?',
+    //       w: '?'
+    //     }
+    //   ]
+    // };
     console.log(this.graph);
     axios
       .get('https://lambda-treasure-hunt.herokuapp.com/api/adv/init/', headers)
