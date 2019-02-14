@@ -58,31 +58,32 @@ class App extends Component {
     return this.graph[`Room ${this.state.room_id}`];
   }
 
-  // backtrack_to_unexplored(starting_vertex_id) {
-  //   const q = []
-  //   q.push([starting_vertex_id])
-  //   const visited = []
-  //   while (q.length > 0) {
-  //     const path = q.pop()
-  //     const v = path[path.length - 1]
-  //     for (let i in visited) {
-  //       if (v !== i) {
-  //         for (let exit in this.graph[v]) {
-  //           if (this.graph[v][exit] === '?') {
-  //             return path
-  //           }
-  //           visited.add(v)
-  //           for (let exit_direction in this.graph[v]) {
-  //             const new_path = [...path]
-  //             new_path.push(this.graph[v][exit_direction])
-  //             q.push(new_path)
-  //           }
-  //         }
-  //       }
-  //     }
-  //     return false
-  //   }
-  // }
+  backtrack_to_unexplored(starting_vertex_id = this.state.room_id, target = '?') {
+    const queue = [];
+    queue.push([starting_vertex_id]);
+    const visited = [];
+    while (queue.length > 0) {
+      let dequeued = queue.shift();
+      let last_room = dequeued[dequeued.length - 1];
+      for (let exit in last_room) {
+        if (last_room[exit] === target) {
+          dequeued.pop();
+          return dequeued;
+        } else {
+          visited.add(last_room[exit]);
+          for (let path in this.graph[last_room[exit]].exits) {
+            if (visited.has(this.graph[last_room[exit]].exits[path]) === false) {
+              let path_copy = [...dequeued];
+              path_copy.push({ [path]: this.graph[last_room[exit]].exits[path] });
+              queue.push(path_copy);
+              console.log(queue);
+            }
+          }
+          console.log(queue);
+        }
+      }
+    }
+  }
 
   // path_to_directions(path) {
   //   const current_room = path[0]
