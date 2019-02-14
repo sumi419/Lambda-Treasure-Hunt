@@ -104,18 +104,12 @@ class App extends Component {
   // }
 
   componentDidMount() {
-    const headers = {
-      headers: {
-        Authorization: config['token']
-      }
-    };
     if (localStorage.hasOwnProperty('graph')) {
       const graph = JSON.parse(localStorage.getItem('graph'));
-      this.graph = graph;
+      this.setState({ graph });
     }
-    console.log(this.graph);
     axios
-      .get('https://lambda-treasure-hunt.herokuapp.com/api/adv/init/', headers)
+      .get('https://lambda-treasure-hunt.herokuapp.com/api/adv/init/')
       .then((response) => {
         console.log(response.data);
         // functional set State returns the function immediately
@@ -148,16 +142,11 @@ class App extends Component {
   }
 
   handleMovement(direction) {
-    const headers = {
-      headers: {
-        Authorization: config.token
-      }
-    };
     const data = {
       direction: direction
     };
     axios
-      .post('https://lambda-treasure-hunt.herokuapp.com/api/adv/move/', data, headers)
+      .post('https://lambda-treasure-hunt.herokuapp.com/api/adv/move/', data)
       .then((response) => {
         console.log(response.data);
         this.setState(function() {
