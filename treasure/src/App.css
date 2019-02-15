@@ -31,3 +31,14 @@
     transform: rotate(360deg);
   }
 }
+
+.map-container {
+  position: relative;
+  display: flex;
+}
+.map-div {
+  width: 20px;
+  height: 20px;
+  background: white;
+  /* position: absolute; */
+}

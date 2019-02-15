@@ -41,25 +41,22 @@ class App extends Component {
 
   updateGraph = (id, coordinates, exits, prevRoomId = null, direction = null) => {
     let graph = Object.assign({}, this.state.graph);
-    if (!this.state.graph[this.state.room_id]) {
-      const newGraph = {};
-      newGraph['cords'] = coordinates;
-
+    if (!this.state.graph[`Room ${this.state.room_id}`]) {
       const directions = {};
       for (let exit of this.state.exits) {
         console.log(exit);
         directions[exit] = '?';
       }
-      newGraph['exits'] = directions;
-      graph = { ...graph, [this.state.room_id]: newGraph };
+      // room 1: {coords: {x: x, y:y} {exits: {n: ?, s: ?, e: ?, w: ?}}}
+      let graphObj = { coords: coordinates, exits: directions };
+      graph[`Room ${this.state.room_id}`] = graphObj;
     }
     if (prevRoomId && direction) {
-      console.log(graph[prevRoomId]['exits'][direction]);
+      console.log(graph[`Room ${prevRoomId}`]['exits'][direction]);
       const inverse = this.inverseDirection(direction);
-      graph[prevRoomId]['exits'][direction] = this.state.room_id;
-      graph[this.state.room_id]['exits'][inverse] = prevRoomId;
+      graph[`Room ${prevRoomId}`]['exits'][direction] = this.state.room_id;
+      graph[`Room ${this.state.room_id}`]['exits'][inverse] = prevRoomId;
     }
-    localStorage.setItem('graph', JSON.stringify(graph));
     return graph;
   };
 
@@ -108,6 +105,7 @@ class App extends Component {
       const graph = JSON.parse(localStorage.getItem('graph'));
       this.setState({ graph });
     }
+    const prev_room_id = this.state.room_id;
     axios
       .get('https://lambda-treasure-hunt.herokuapp.com/api/adv/init/')
       .then((response) => {
@@ -123,7 +121,6 @@ class App extends Component {
             exits: response.data.exits
           };
         });
-        const prev_room_id = this.state.room_id;
         const graph = this.updateGraph(
           this.state.room_id,
           this.getCoordinates(this.state.coordinates),
@@ -133,7 +130,7 @@ class App extends Component {
         this.setState({ graph });
       })
       .catch((error) => {
-        console.log(error.response.data);
+        console.log(error);
       });
     setTimeout(() => {
       this.handleMovement();
@@ -145,6 +142,7 @@ class App extends Component {
     const data = {
       direction: direction
     };
+    const prev_room_id = this.state.room_id;
     axios
       .post('https://lambda-treasure-hunt.herokuapp.com/api/adv/move/', data)
       .then((response) => {
@@ -159,29 +157,59 @@ class App extends Component {
             exits: response.data.exits
           };
         });
-        const prev_room_id = this.state.room_id;
-        const graph = this.updateGraph(
-          this.state.room_id,
-          this.getCoordinates(this.state.coordinates),
-          this.state.exits,
-          prev_room_id,
-          direction
+        const graph = Object.assign(
+          {},
+          graph,
+          this.updateGraph(
+            this.state.room_id,
+            this.getCoordinates(this.state.coordinates),
+            this.state.exits,
+            prev_room_id,
+            direction
+          )
         );
+        localStorage.setItem('graph', JSON.stringify(graph));
       })
-      .catch((error) => console.error(error.response.data));
+      .catch((error) => console.error(error));
   }
+
+  handleVisualize = () => {
+    let graph = JSON.parse(localStorage.getItem('graph'));
+    let keys = Object.keys(graph);
+    let values = Object.values(graph);
+    let coords = Object.values(values);
+    let divs = [];
+    for (let i = 0; i < keys.length; i++) {
+      let divStyle = {
+        top: coords[i].cords.y * 5 + 'px',
+        left: coords[i].cords.x * 5 + 'px',
+        marginRight: coords[i].cords.x + 'px',
+        marginLeft: coords[i].cords.y + 'px'
+      };
+      console.log(coords[i].cords, keys[i]);
+      divs.push(
+        <div className="map-div" key={keys[i]} style={divStyle}>
+          {values.room_id}
+        </div>
+      );
+    }
+    return divs;
+  };
 
   render() {
     return (
       <div className="App">
-        <div> Title: {this.state.title} </div> <div> Room Id: {this.state.room_id} </div>{' '}
-        <div> Cooldown: {this.state.cooldown} </div>{' '}
-        <div> Coordinates: {this.state.coordinates} </div>{' '}
-        <div> Elevation: {this.state.elevation} </div> <div> Exits: {this.state.exits} </div>{' '}
-        <button onClick={() => this.handleMovement('n')}> N </button>{' '}
-        <button onClick={() => this.handleMovement('s')}> S </button>{' '}
-        <button onClick={() => this.handleMovement('e')}> E </button>{' '}
-        <button onClick={() => this.handleMovement('w')}> W </button>{' '}
+        <div> Title: {this.state.title} </div>
+        <div> Room Id: {this.state.room_id}</div>
+        <div> Cooldown: {this.state.cooldown}</div>
+        <div> Coordinates: {this.state.coordinates}</div>
+        <div> Elevation: {this.state.elevation}</div>
+        <div> Exits: {this.state.exits} </div>
+        <button onClick={() => this.handleMovement('n')}> N </button>
+        <button onClick={() => this.handleMovement('s')}> S </button>
+        <button onClick={() => this.handleMovement('e')}> E </button>
+        <button onClick={() => this.handleMovement('w')}> W </button>
+        <div className="map-container">{this.handleVisualize()}</div>
       </div>
     );
   }
