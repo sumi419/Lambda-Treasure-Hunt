@@ -113,7 +113,7 @@ class App extends Component {
         height: '20px',
         backgroundColor: 'pink',
         left: (coords[i].cords.x - 47) * 30 + 'px',
-        top: (coords[i].cords.y - 60) * 30 + 'px'
+        top: (coords[i].cords.y - 70) * -30 + 'px'
       };
       divs.push(
         <div className="map-div" key={keys[i]} style={divStyle}>
